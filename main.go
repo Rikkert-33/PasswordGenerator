@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -34,6 +36,10 @@ func main() {
 	for checkPassword(db, password) {
 		password = generatePassword(10, true, true)
 	}
+
+	addPassword(db, password)
+
+	fmt.Println(password)
 }
 
 func createTable() error {
@@ -84,4 +90,13 @@ func checkPassword(db *sql.DB, password string) bool {
 	}
 	//Password already exists if count > 0
 	return count > 0
+}
+
+func addPassword(db *sql.DB, password string) {
+	//Adds the password to the database
+	query := "INSERT INTO passwords(password) VALUES(?)"
+	_, err := db.Exec(query, password)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
