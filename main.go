@@ -28,8 +28,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	generatePassword(10, true, true)
+	password := generatePassword(10, true, true)
 
+	//Checks if password already exists and creates a new password if it already exists
+	for checkPassword(db, password) {
+		password = generatePassword(10, true, true)
+	}
 }
 
 func createTable() error {
@@ -68,4 +72,16 @@ func generatePassword(length int, includeNumbers bool, includeSymbols bool) stri
 	}
 	fmt.Println(password) //used to test the function
 	return password
+}
+
+func checkPassword(db *sql.DB, password string) bool {
+	//Checks if the password is in the database
+	query := "SELECT COUNT(*) FROM passwords WHERE password = ?"
+	var count int
+	err := db.QueryRow(query, password).Scan(&count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Password already exists if count > 0
+	return count > 0
 }
