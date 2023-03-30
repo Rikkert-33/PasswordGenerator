@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"os"
 
+	_ "github.com/go-sql-driver/mysql" //Used to initialize the mysql driver package, so you don't need to call it directly in your code.
 	_ "github.com/lib/pq"
 )
 
@@ -16,26 +17,54 @@ type Config struct {
 	DBname string `json:"dbname"`
 	DBuser string `json:"dbuser"`
 	DBpass string `json:"dbpass"`
+	DBhost string `json:"dbhost"`
+	DBport string `json:"dbport"`
 }
 
 var database *sql.DB //database connection
 
 func main() {
 	//Read the config file
-	data, err := os.ReadFile("config.json")
-	if err != nil {
-		panic(err)
-	}
 
-	var config Config
-	err = json.Unmarshal(data, &config)
+	// data, err := os.ReadFile("config.json")
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// var config Config
+	// err = json.Unmarshal(data, &config)
+	// if err != nil {
+	// 	fmt.Println("Error reading config file:", err)
+	// 	os.Exit(1)
+	// }
+
+	file, err := os.Open("config.json")
 	if err != nil {
-		fmt.Println("Error reading config file:", err)
-		os.Exit(1)
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	config := Config{}
+	err = decoder.Decode(&config)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	//Connect to the database
-	db, err := sql.Open("postgres", "dbname="+config.DBname+" user="+config.DBuser+" password="+config.DBpass+" sslmode=disable")
+
+	// db, err := sql.Open("mysql", "dbname="+config.DBuser+" user="+config.DBpass+" password="+config.DBhost+" port="+config.DBport+" sslmode=disable")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// database = db
+	// if err := createTable(); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.DBuser, config.DBpass, config.DBhost, config.DBport, config.DBname)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,6 +73,7 @@ func main() {
 	if err := createTable(); err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	password := generatePassword(10, true, true)
 
@@ -58,12 +88,18 @@ func main() {
 }
 
 func createTable() error {
-	query := `CREATE TABLE IF NOT EXISTS passwords (
-		id			SERIAL	PRIMARY KEY,
-		password	TEXT	NOT NULL
-	);`
-	_, err := database.Exec(query)
-	return err
+	createTableSQL := `
+CREATE TABLE IF NOT EXISTS passwords (
+  id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  password VARCHAR(100) NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
+
+	var err error
+	_, err = database.Exec(createTableSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }
 
 func generatePassword(length int, includeNumbers bool, includeSymbols bool) string {
