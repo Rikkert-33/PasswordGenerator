@@ -3,24 +3,39 @@ package main
 import (
 	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	dbname = "mijndb"
-	dbuser = "rik"
-	dbpass = "SQLR1k"
-)
+type Config struct {
+	DBname string `json:"dbname"`
+	DBuser string `json:"dbuser"`
+	DBpass string `json:"dbpass"`
+}
 
 var database *sql.DB //database connection
 
 func main() {
+	//Read the config file
+	data, err := os.ReadFile("config.json")
+	if err != nil {
+		panic(err)
+	}
+
+	var config Config
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		fmt.Println("Error reading config file:", err)
+		os.Exit(1)
+	}
+
 	//Connect to the database
-	db, err := sql.Open("postgres", "dbname="+dbname+" user="+dbuser+" password="+dbpass+" sslmode=disable")
+	db, err := sql.Open("postgres", "dbname="+config.DBname+" user="+config.DBuser+" password="+config.DBpass+" sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
