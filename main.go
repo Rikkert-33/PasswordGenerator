@@ -18,8 +18,8 @@ ideas for future updates:
 - user to choose length of password
 - user to choose if they want numbers and/or symbols
 - option to ask for stored password to show out of the database
-- option to ask for password to delete from database
 - encrypt/decrypt passwords
+- option to ask for password to delete from database
 - db passwords connect to user?
 */
 
@@ -73,11 +73,43 @@ func main() {
 	}
 	defer db.Close()
 
-	password := generatePassword(10, true, true)
+	//choose a password length, numbers and/or symbols
+	var pwLength int
+	var numbers bool
+	var symbols bool
+	var input string
+
+	//length of password
+	fmt.Println("set password length: ")
+	fmt.Scanln(&pwLength)
+
+	//numbers
+	fmt.Println("include numbers? (y/n): ")
+	fmt.Scanln(&input)
+	if input == "y" {
+		numbers = true
+	} else if input == "n" {
+		numbers = false
+	} else {
+		fmt.Println("invalid input")
+	}
+
+	//symbols
+	fmt.Println("include symbols? (y/n): ")
+	fmt.Scanln(&input)
+	if input == "y" {
+		symbols = true
+	} else if input == "n" {
+		symbols = false
+	} else {
+		fmt.Println("invalid input")
+	}
+
+	password := generatePassword(pwLength, numbers, symbols)
 
 	//Checks if password already exists and creates a new password if it already exists
 	for checkPassword(db, password) {
-		password = generatePassword(10, true, true)
+		password = generatePassword(pwLength, numbers, symbols)
 	}
 
 	addPassword(db, password)
