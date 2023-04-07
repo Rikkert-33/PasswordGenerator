@@ -22,14 +22,24 @@ type Config struct {
 }
 
 var database *sql.DB //database connection
+var logger *log.Logger
 
-//add log file
+// add log file
+func init() {
+	// Open the log file
+	logFile, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Create a new logger that writes to the log file
+	logger = log.New(logFile, "", log.Ldate|log.Ltime)
+}
 
 func main() {
 	//Read the config file
 	file, err := os.Open("config.json")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer file.Close()
 
@@ -37,19 +47,19 @@ func main() {
 	config := Config{}
 	err = decoder.Decode(&config)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	//Connect to the database
 	dsn := fmt.Sprintf("%s:%s@/%s", config.DBuser, config.DBpass, config.DBname)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	database = db
 	if err := createTable(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer db.Close()
 
@@ -75,7 +85,7 @@ CREATE TABLE IF NOT EXISTS passwords (
 	var err error
 	_, err = database.Exec(createTableSQL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	return nil
 }
@@ -101,10 +111,11 @@ func generatePassword(length int, includeNumbers bool, includeSymbols bool) stri
 	for i := 0; i < length; i++ {
 		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(characters))))
 		if err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 		password += string(characters[index.Int64()])
 	}
+	logger.Println("Generated password:", password)
 	return password
 }
 
@@ -114,7 +125,7 @@ func checkPassword(db *sql.DB, password string) bool {
 	var count int
 	err := db.QueryRow(query, password).Scan(&count)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	//Password already exists if count > 0
 	return count > 0
@@ -125,6 +136,7 @@ func addPassword(db *sql.DB, password string) {
 	query := "INSERT INTO passwords(password) VALUES(?)"
 	_, err := db.Exec(query, password)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
+	logger.Println("Password added to the database")
 }
