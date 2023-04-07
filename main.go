@@ -23,21 +23,10 @@ type Config struct {
 
 var database *sql.DB //database connection
 
+//add log file
+
 func main() {
 	//Read the config file
-
-	// data, err := os.ReadFile("config.json")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// var config Config
-	// err = json.Unmarshal(data, &config)
-	// if err != nil {
-	// 	fmt.Println("Error reading config file:", err)
-	// 	os.Exit(1)
-	// }
-
 	file, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal(err)
@@ -52,18 +41,7 @@ func main() {
 	}
 
 	//Connect to the database
-
-	// db, err := sql.Open("mysql", "dbname="+config.DBuser+" user="+config.DBpass+" password="+config.DBhost+" port="+config.DBport+" sslmode=disable")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// database = db
-	// if err := createTable(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.DBuser, config.DBpass, config.DBhost, config.DBport, config.DBname)
+	dsn := fmt.Sprintf("%s:%s@/%s", config.DBuser, config.DBpass, config.DBname)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -91,7 +69,7 @@ func createTable() error {
 	createTableSQL := `
 CREATE TABLE IF NOT EXISTS passwords (
   id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  password VARCHAR(100) NOT NULL,
+  password VARCHAR(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
 
 	var err error
@@ -127,7 +105,6 @@ func generatePassword(length int, includeNumbers bool, includeSymbols bool) stri
 		}
 		password += string(characters[index.Int64()])
 	}
-	fmt.Println(password) //used to test the function
 	return password
 }
 
