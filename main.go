@@ -13,6 +13,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+/*
+ideas for future updates:
+- user to choose length of password
+- user to choose if they want numbers and/or symbols
+- option to ask for stored password to show out of the database
+- option to ask for password to delete from database
+- encrypt/decrypt passwords
+- db passwords connect to user?
+*/
+
 type Config struct {
 	DBname string `json:"dbname"`
 	DBuser string `json:"dbuser"`
